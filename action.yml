@@ -37,6 +37,13 @@ runs:
       env:
         APPSWEEP_API_KEY: ${{ inputs.appsweep_api_key }}
       run: |
+        if [ -z $APPSWEEP_API_KEY ]; then
+          echo "Using ssh-agent to authenticate"
+          SSH_AGENT_ARG="--ssh-agent "
+        else
+          echo "Using API key to authenticate"
+          SSH_AGENT_ARG=""
+        fi
         if [ ! -f ${{ inputs.input_file }} ]; then
             echo "App file ${{ inputs.input_file }} not found!"
             exit 1
@@ -54,9 +61,9 @@ runs:
 
         if [ -n "${{ inputs.tag }}" ]; then
           echo "Using tags ${{ inputs.tag }}"
-          BUILD_ID=$(guardsquare scan ${{ inputs.input_file }} --commit-hash ${{ github.sha }} --tag "${{ inputs.tag }}" $MAPPING_FILE_ARG --format '{{.ID}}')
+          BUILD_ID=$(guardsquare scan ${{ inputs.input_file }} --commit-hash ${{ github.sha }} --tag "${{ inputs.tag }}" $SSH_AGENT_ARG $MAPPING_FILE_ARG --format '{{.ID}}')
         else
-          BUILD_ID=$(guardsquare scan ${{ inputs.input_file }} --commit-hash ${{ github.sha }} $MAPPING_FILE_ARG --format '{{.ID}}')
+          BUILD_ID=$(guardsquare scan ${{ inputs.input_file }} --commit-hash ${{ github.sha }} $SSH_AGENT_ARG $MAPPING_FILE_ARG --format '{{.ID}}')
         fi
 
         echo "Build details available at: https://appsweep.guardsquare.com/builds/$BUILD_ID"
